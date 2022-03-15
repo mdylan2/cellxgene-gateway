@@ -12,7 +12,8 @@ import urllib.parse
 
 from cellxgene_gateway import env, flask_util
 from cellxgene_gateway.cache_key import CacheKey
-from cellxgene_gateway.dir_util import annotations_suffix, make_annotations, make_h5ad
+
+# from cellxgene_gateway.dir_util import annotations_suffix, make_annotations, make_h5ad
 
 
 def render_annotations(item, item_source):

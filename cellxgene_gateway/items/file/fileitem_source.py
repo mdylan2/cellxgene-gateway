@@ -22,13 +22,15 @@ class FileItemSource(ItemSource):
         base_path,
         name=None,
         h5ad_suffix=dir_util.h5ad_suffix,
-        annotation_dir_suffix=dir_util.annotations_suffix,
+        annotations_dirname=dir_util.annotations_dirname,
+        data_dirname=dir_util.data_dirname,
         annotation_file_suffix=".csv",
     ):
         self._name = name
         self.base_path = base_path
         self.h5ad_suffix = h5ad_suffix
-        self.annotation_dir_suffix = annotation_dir_suffix
+        self.annotations_dirname = annotations_dirname
+        self.data_dirname = data_dirname
         self.annotation_file_suffix = annotation_file_suffix
 
     @property
@@ -39,10 +41,16 @@ class FileItemSource(ItemSource):
         return path.endswith(self.h5ad_suffix) and os.path.isfile(path)
 
     def convert_annotation_path_to_h5ad(self, path):
-        return path[: -len(self.annotation_dir_suffix)] + self.h5ad_suffix
+        path = path.replace(
+            f"/{self.annotations_dirname}/", f"/{self.data_dirname}/", 1
+        )
+        return path + self.h5ad_suffix
 
     def convert_h5ad_path_to_annotation(self, path):
-        return path[: -len(self.h5ad_suffix)] + self.annotation_dir_suffix
+        path = path.replace(
+            f"/{self.data_dirname}/", f"/{self.annotations_dirname}/", 1
+        )
+        return path[: -len(self.h5ad_suffix)]
 
     def get_local_path(self, item: FileItem) -> str:
         return os.path.join(self.base_path, item.descriptor)
@@ -76,7 +84,7 @@ class FileItemSource(ItemSource):
 
         def is_annotation_dir(dir):
             return (
-                dir.endswith(self.annotation_dir_suffix)
+                self.annotations_dirname in dir.split("/")
                 and self.convert_annotation_path_to_h5ad(dir) in h5ad_paths
             )
 
@@ -143,12 +151,12 @@ class FileItemSource(ItemSource):
     def shallowitem_from_descriptor(self, descriptor, is_annotation=False):
         filename = os.path.basename(descriptor)
         subpath = os.path.dirname(descriptor)
-        return self.make_fileitem_from_path(
-            filename,
-            subpath,
-            is_annotation,
-            True,
-        )
+        if is_annotation:
+            subpath = subpath.replace(
+                f"/{self.data_dirname}/", f"/{self.annotations_dirname}/", 1
+            )
+
+        return self.make_fileitem_from_path(filename, subpath, is_annotation, True,)
 
     def make_fileitem_from_path(
         self, filename, subpath, is_annotation=False, is_shallow=False

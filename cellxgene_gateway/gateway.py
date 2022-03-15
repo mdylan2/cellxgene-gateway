@@ -11,6 +11,7 @@ import json
 import logging
 import os
 import urllib.parse
+from functools import wraps
 from threading import Lock, Thread
 
 from flask import (
@@ -36,6 +37,29 @@ from cellxgene_gateway.filecrawl import render_item_source
 from cellxgene_gateway.process_exception import ProcessException
 from cellxgene_gateway.prune_process_cache import PruneProcessCache
 from cellxgene_gateway.util import current_time_stamp
+
+# def require_login():
+#     user = os.environ.get("USER", None)
+
+#     if user is None:
+#         return redirect("/login")
+#     return user
+
+# Need  some authentication system in place that has a global session dictionary
+# with user info, for now I assume its in the environment
+def logged_in(f):
+    @wraps(f)
+    def decorated_func(*args, **kwargs):
+        # current_user = require_login()
+        user_in_req = kwargs.get("path").split("/")[0]
+        current_user = os.environ.get("USER", None)
+        if user_in_req in [current_user, "public"]:
+            return f(*args, **kwargs)
+        else:
+            raise CellxgeneException(f"You are not authorized to view that page", 401)
+
+    return decorated_func
+
 
 app = Flask(__name__)
 
@@ -87,9 +111,7 @@ def handle_invalid_usage(error):
 
     return (
         render_template(
-            "cellxgene_error.html",
-            extra_scripts=get_extra_scripts(),
-            message=message,
+            "cellxgene_error.html", extra_scripts=get_extra_scripts(), message=message,
         ),
         error.http_status,
     )
@@ -145,8 +167,7 @@ def filecrawl(path=None):
     source_name = request.args.get("source")
     sources = (
         filter(
-            lambda x: x.name == urllib.parse.unquote_plus(source_name),
-            item_sources,
+            lambda x: x.name == urllib.parse.unquote_plus(source_name), item_sources,
         )
         if source_name
         else item_sources
@@ -183,10 +204,10 @@ def matching_source(source_name):
 
 
 @app.route(
-    "/source/<path:source_name>/view/<path:path>",
-    methods=["GET", "PUT", "POST"],
+    "/source/<path:source_name>/view/<path:path>", methods=["GET", "PUT", "POST"],
 )
 @app.route("/view/<path:path>", methods=["GET", "PUT", "POST"])
+@logged_in
 def do_view(path, source_name=None):
     source = matching_source(source_name)
     match = cache.check_path(source, path)
@@ -195,8 +216,7 @@ def do_view(path, source_name=None):
         lookup = source.lookup(path)
         if lookup is None:
             raise CellxgeneException(
-                f"Could not find item for path {path} in source {source.name}",
-                404,
+                f"Could not find item for path {path} in source {source.name}", 404,
             )
         key = CacheKey.for_lookup(source, lookup)
         print(
@@ -258,10 +278,7 @@ def do_relaunch(path):
     match = cache.check_entry(key)
     if not match is None:
         match.terminate()
-    return redirect(
-        key.view_url,
-        code=302,
-    )
+    return redirect(key.view_url, code=302,)
 
 
 @app.route("/terminate/<path:path>", methods=["GET"])
@@ -301,8 +318,7 @@ def launch():
 
 def main():
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s:%(name)s:%(levelname)s:%(message)s",
+        level=logging.INFO, format="%(asctime)s:%(name)s:%(levelname)s:%(message)s",
     )
     cellxgene_data = os.environ.get("CELLXGENE_DATA", None)
     cellxgene_bucket = os.environ.get("CELLXGENE_BUCKET", None)

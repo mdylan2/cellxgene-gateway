@@ -1,4 +1,4 @@
-cellxgene>=0.15
+cellxgene
 flask<2.0.0,>=1.0.2
 flask-api==2.0
 werkzeug==1.0.1

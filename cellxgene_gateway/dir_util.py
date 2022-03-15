@@ -14,16 +14,21 @@ from flask_api import status
 from cellxgene_gateway import env
 from cellxgene_gateway.cellxgene_exception import CellxgeneException
 
-annotations_suffix = "_annotations"
+annotations_dirname = "annotations"
+data_dirname = "data"
 h5ad_suffix = ".h5ad"
 
 
 def make_h5ad(el):
-    return el[: -len(annotations_suffix)] + h5ad_suffix
+    el.replace(f"/{annotations_dirname}/", f"/{data_dirname}/", 1)
+
+    return el + h5ad_suffix
 
 
 def make_annotations(el):
-    return el[:-5] + annotations_suffix
+    el.replace(f"/{data_dirname}/", f"/{annotations_dirname}/", 1)
+
+    return el[: -len(h5ad_suffix)]
 
 
 def ensure_dir_exists(file_path):

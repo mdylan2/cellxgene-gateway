@@ -11,9 +11,9 @@
 
 <html>
 <head>
-     <title>Cellxgene Gateway - FILE CRAWLER</title>
+     <title>Phenomic Cellxgene Gateway - FILE CRAWLER</title>
      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-     <link rel="icon" type="image/png" href="{{ url_for('static', filename='nibr.ico') }}">
+     <link rel="icon" type="image/png" href="{{ url_for('static', filename='nav-logo.png') }}">
 	{% for script in extra_scripts %}
 	<script src="{{ script }}"></script>
      {% endfor %}
@@ -23,9 +23,9 @@
 <body>
      <header class="navbar navbar-expand navbar-dark flex-column flex-md-row bd-navbar">
           {% if path %}
-          <h3>Cellxgene Gateway - {{ path }}</h3>
+          <h3>Phenomic Cellxgene Gateway - {{ path }}</h3>
           {% else %}
-          <h3>Cellxgene Gateway - FILE CRAWLER</h3>
+          <h3>Phenomic Cellxgene Gateway - FILE CRAWLER</h3>
           {% endif %}
      </header>
 
